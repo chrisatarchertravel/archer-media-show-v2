@@ -12,40 +12,47 @@ The show runs a live podcast using the following signal chain:
 - **Blackmagic Studio 4K Plus cameras** — with camera control and talkback over SDI
 - **DJI Mic 3** — presenter wireless microphones, received via USB-C into the show computer
 - **OBS** — running on the show computer, connected to the ATEM via HDMI-to-SDI converter
-- **IFBs** — presenter earpieces fed from the Studio 4K Plus's camera talkback feature
+- **IFBs** — presenter earpieces for program monitoring
+- **ATEM talkback** — already in use by the control room team, not available for presenter IFBs
 
 **The issue:** presenters wearing IFBs were hearing their own voices echoing back in their earpieces. This happens because:
 
 1. DJI mics feed into the computer as a single combined audio input
-2. The computer sends that audio to OBS, which sends it to the ATEM as a program source
-3. The ATEM's program output — which now includes the presenters' voices — feeds back into the camera talkback system
-4. Camera talkback drives the IFBs, completing the loop
+2. The computer sends that audio to OBS, which sends it to the ATEM as one combined source (mics + computer audio mixed together)
+3. The ATEM's program output — which includes the presenters' voices — fed back into the presenter IFB system
+4. The presenter hears a delayed version of their own voice, which is disorienting
 
-A traditional **mix-minus** (sending each presenter a mix of everything except their own mic) is not possible here because all microphones arrive at the ATEM as one combined source. There is no way to isolate individual voices at the switcher level.
+Two constraints made a standard fix impossible:
+- A hardware **mix-minus** at the ATEM level is not possible because all mics arrive as a single combined source — individual voices cannot be separated at the switcher
+- **ATEM talkback** is already dedicated to the control room team and cannot be repurposed for presenter IFBs
 
 ---
 
 ## The Solution
 
-Intercept the audio **before it reaches the ATEM** using Voicemeeter Banana, and split it into two separate output buses:
+Intercept the audio **before it reaches the ATEM** using Voicemeeter Banana and split it into three independent output buses. The key insight is to give the DJI mics their own dedicated physical path to the ATEM — separate from the computer audio — so the ATEM can govern mic levels independently, and the IFB feed can be constructed without any mic signal in it at all.
 
 ```
 DJI Mics (USB-C)
     │
     ▼
 Voicemeeter Banana
-    ├── Bus B1 ──► Virtual Cable 1 ──► OBS ──► ATEM (full broadcast mix)
-    └── Bus B2 ──► Physical Audio Out ──► ATEM Aux Input ──► Camera Talkback ──► IFB
+    └── Bus A2 ──► Physical Audio Out ──► HDMI-SDI adapter ──► ATEM dedicated mic input
+                                                                 (ATEM controls mic levels)
 
 Computer Playback (music, SFX, system audio)
     │
     ▼
 Voicemeeter Banana
-    ├── Bus B1 ──► OBS (included in broadcast)
-    └── Bus B2 ──► IFB feed ✓ (presenters hear this)
+    ├── Bus B1 ──► Virtual Cable 1 ──► OBS ──► ATEM (computer audio only, no mics)
+    └── Bus B2 ──► Physical Audio Out 2 ──► Wireless IFB TX ──► Presenter earpieces ✓
 ```
 
-**IFB Safe Mode** (the core feature of this app) removes the mic strip's B2 routing assignment with one button press. Presenters hear all computer playback audio in their earpieces, but never hear their own voices fed back through the program output.
+This gives the ATEM two independent, controllable audio inputs:
+1. **Dedicated mic input** (via A2 physical routing) — level and mix option controlled from ATEM Software Control or this app
+2. **Computer audio input** (via OBS/virtual cable) — music, SFX, playback with no mic signal
+
+The presenter IFB feed (B2 bus) only ever contains computer playback audio. Mics never reach it. **IFB Safe Mode** in this app enforces that with one button, and can be temporarily disabled during rehearsal/soundcheck so presenters can hear themselves while setting levels.
 
 ---
 
@@ -166,46 +173,54 @@ To find the ATEM's IP: open **ATEM Software Control → Preferences → Network*
 
 ---
 
-### 2. Voicemeeter Banana setup
+### 2. Additional hardware required
+
+You will need:
+- **A second physical audio output** on your show computer's sound card (or a USB audio interface with two outputs) — one for the ATEM mic feed (A2), one for the IFB feed (B2)
+- **An HDMI-to-SDI converter** (or a spare SDI-capable input path) to bring the A2 mic feed into the ATEM as a dedicated input — the same type of converter already used for the OBS computer source works
+- **A wireless IFB transmitter** (e.g. Comtek, Listen Technologies, or a spare DJI receiver in monitoring mode) fed from the B2 physical output — this replaces the camera talkback path for presenter monitoring since talkback is reserved for the control room
+
+---
+
+### 3. Voicemeeter Banana setup
 
 Open Voicemeeter Banana before starting the app. Configure it as follows:
 
 #### Hardware Inputs (left side strips)
-| Strip | Source | Sends to |
-|---|---|---|
-| Hardware Input 1 | DJI Mics (select your DJI USB-C device from the dropdown) | B1 ON, B2 OFF, A1 ON |
-| Virtual Input 1 | System audio / OBS returns (if needed) | B1 ON, B2 ON, A1 ON |
 
-The critical setting: **Hardware Input 1 (DJI Mics) must have B2 turned OFF**. This is what IFB Safe Mode enforces via the app. B2 is the IFB feed bus — mic audio must never reach it during a live show.
+| Strip | Source | A1 | A2 | B1 | B2 |
+|---|---|---|---|---|---|
+| Hardware Input 1 | DJI Mics (select your DJI USB-C device) | OFF | **ON** | OFF | OFF |
+| Virtual Input 1 | System audio (set as default Windows playback device) | ON | OFF | **ON** | **ON** |
+
+Key points:
+- **DJI Mics → A2 only.** The mic signal goes directly to the ATEM via a physical cable. It does not go into OBS (B1 OFF) and never reaches the IFB feed (B2 OFF).
+- **System audio → B1 and B2.** Computer playback goes to OBS for broadcast (B1) and also to the IFB feed (B2) so presenters hear music, SFX, and playback in their earpieces.
 
 #### Hardware Outputs (right side buses)
+
 | Bus | Route to |
 |---|---|
-| A1 | Your monitor speakers or headphones (local playback) |
-| B1 (Virtual Output 1) | Set as the audio input device in OBS. This is what OBS captures and sends to the ATEM. |
-| B2 (Virtual Output 2) | Connect to a physical audio output on your sound card, then wire that output to an available input on the ATEM (used as the IFB source). |
+| A1 | Local monitor speakers or headphones |
+| **A2** | Physical audio output 1 on your sound card → HDMI-SDI adapter → spare ATEM SDI input (this becomes the dedicated DJI mic input on the ATEM) |
+| B1 (Virtual Output 1) | Set as the audio capture device in OBS — computer audio only, no mics |
+| **B2 (Virtual Output 2)** | Physical audio output 2 on your sound card → Wireless IFB transmitter → Presenter earpieces |
 
 #### In OBS
-- Set audio capture device to **VB-Audio Virtual Cable** (which is Bus B1)
-- This sends the full broadcast mix (including mics) to the ATEM as a program source
+- Set audio capture device to **VB-Audio Virtual Cable** (Bus B1)
+- This captures computer audio only — mics are no longer part of this signal path
+- OBS sends clean program audio (no presenter voices) to the ATEM
 
 #### On the ATEM
 
-The Studio 4K Plus cameras receive IFB audio via the camera control cable (12G-SDI with return talkback). The ATEM feeds talkback audio to connected cameras from its **program audio output by default** — this is what causes the presenter feedback loop this app is designed to fix.
+The dedicated mic input (the SDI input connected to A2) now appears in the ATEM as a standard input with its own independent audio channel.
 
-To configure talkback audio in ATEM Software Control:
+1. Open **ATEM Software Control → Audio** tab
+2. Find the input corresponding to your A2 connection (e.g. Input 7)
+3. Set its mix option to **ON** (always in mix) or **AFV** as needed
+4. The input level can be controlled from the ATEM Audio panel or from the **ATEM Audio Mixer** panel in this app
 
-1. Open **ATEM Software Control**
-2. Go to the **Camera** tab (top navigation)
-3. For each camera, there is a **Talkback** column — this controls what audio is sent back to that camera's IFB output
-4. Set the talkback source to the **audio input** you wired B2 into (e.g. Input 7 or whichever physical input on the ATEM you connected the B2 audio feed to)
-
-If you do not see per-camera talkback source selection, your firmware may need updating:
-- Open **ATEM Setup** (separate utility from ATEM Software Control)
-- Check **Software Update** — install the latest ATEM firmware
-- Talkback source routing was added in firmware 8.6+
-
-> **Alternative if talkback source routing is unavailable:** The ATEM HD8 ISO has a dedicated **Talkback** XLR input on the rear panel. Wire the B2 physical audio output from your sound card directly into this input. The ATEM will then use that signal as the talkback/IFB feed to all connected cameras automatically, bypassing the need to configure per-camera routing in software.
+> The ATEM talkback system remains untouched and available for the control room team as before.
 
 ---
 
@@ -230,9 +245,9 @@ The app includes three one-click presets accessible from the Presets panel:
 
 | Preset | What it does | When to use |
 |---|---|---|
-| **Live Mode** | IFB Safe ON — mics excluded from IFB bus | Default for all live recording |
-| **Rehearsal** | IFB Safe OFF — mics included in IFB | Soundcheck, mic testing, before recording |
-| **Break** | IFB bus muted entirely | Ad breaks, between segments |
+| **Live Mode** | Mics routed to ATEM via A2, excluded from IFB (B2 OFF) | Default for all live recording |
+| **Rehearsal** | Mics routed to ATEM via A2, also sent to IFB (B2 ON) so presenters can hear themselves | Soundcheck and mic level setting before recording |
+| **Break** | IFB bus (B2) muted entirely | Ad breaks, between segments |
 
 ---
 

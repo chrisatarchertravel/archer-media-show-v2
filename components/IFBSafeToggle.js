@@ -55,21 +55,41 @@ export function IFBSafeToggle({ ifbSafeMode, onChange }) {
         )}
       </button>
 
-      {/* Signal flow diagram */}
-      <div className="w-full max-w-xs text-xs text-slate-500 space-y-1 pt-2 border-t border-[#2a2d3a]">
-        <p className="label-xs mb-2">Current IFB receives:</p>
-        <div className="flex items-center gap-2">
-          {ifbSafeMode
-            ? <MicOff size={12} className="text-red-500 shrink-0" />
-            : <Mic size={12} className="text-green-500 shrink-0" />}
-          <span className={ifbSafeMode ? 'line-through text-slate-600' : 'text-slate-300'}>
-            DJI Mics (presenter voices)
-          </span>
+      {/* Signal flow breakdown */}
+      <div className="w-full max-w-xs text-xs space-y-3 pt-3 border-t border-[#2a2d3a]">
+
+        {/* IFB column */}
+        <div className="space-y-1">
+          <p className="label-xs mb-1">Presenter earpiece receives:</p>
+          <div className="flex items-center gap-2">
+            {ifbSafeMode
+              ? <MicOff size={12} className="text-red-500 shrink-0" />
+              : <Mic size={12} className="text-green-500 shrink-0" />}
+            <span className={ifbSafeMode ? 'line-through text-slate-600' : 'text-slate-300'}>
+              DJI Mics
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-px bg-green-500 shrink-0 inline-block" />
+            <span className="text-slate-300">Computer audio (music, SFX, playback)</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-px bg-green-500 shrink-0 inline-block" />
-          <span className="text-slate-300">Computer audio (music, SFX, playback)</span>
+
+        {/* Program — always constant, this toggle never affects it */}
+        <div className="space-y-1 bg-[#0f1117] rounded p-2">
+          <p className="label-xs mb-1">Program output — always:</p>
+          <div className="flex items-center gap-2">
+            <Mic size={12} className="text-green-500 shrink-0" />
+            <span className="text-slate-300">DJI Mics</span>
+            <span className="text-[10px] text-slate-600 ml-auto">unaffected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-px bg-green-500 shrink-0 inline-block" />
+            <span className="text-slate-300">Computer audio</span>
+            <span className="text-[10px] text-slate-600 ml-auto">unaffected</span>
+          </div>
         </div>
+
       </div>
     </div>
   )

@@ -6,7 +6,7 @@ import { ConnectionStatus } from '@/components/ConnectionStatus'
 import { AudioRoutingGrid } from '@/components/AudioRoutingGrid'
 import { BusVolumePanel } from '@/components/BusVolumeSlider'
 import { PresetPanel } from '@/components/PresetPanel'
-import { ATEMStatus } from '@/components/ATEMStatus'
+import { ATEMMicControl } from '@/components/ATEMMicControl'
 import { Radio } from 'lucide-react'
 
 export default function Dashboard() {
@@ -32,35 +32,38 @@ export default function Dashboard() {
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-        {/* LEFT — IFB Safe Toggle (hero control, most important) */}
+        {/* LEFT — IFB Safe Toggle + Presets */}
         <div className="lg:col-span-1 flex flex-col gap-4">
           <IFBSafeToggle ifbSafeMode={vmState?.ifbSafeMode} />
           <PresetPanel />
         </div>
 
-        {/* CENTER — Routing + Levels */}
+        {/* CENTER — Voicemeeter Routing + Levels */}
         <div className="lg:col-span-1 flex flex-col gap-4">
           <AudioRoutingGrid strips={vmState?.strips} />
           <BusVolumePanel strips={vmState?.strips} buses={vmState?.buses} />
         </div>
 
-        {/* RIGHT — Hardware status */}
+        {/* RIGHT — Connections + ATEM Audio Mixer */}
         <div className="lg:col-span-1 flex flex-col gap-4">
           <ConnectionStatus
             atemState={atemState}
             vmState={vmState}
             socketConnected={socketConnected}
           />
-          <ATEMStatus atemState={atemState} />
+          <ATEMMicControl atemState={atemState} />
         </div>
 
       </div>
 
-      {/* Footer */}
-      <footer className="mt-8 pt-4 border-t border-[#2a2d3a] text-center">
-        <p className="text-[10px] text-slate-600">
-          B2 bus → ATEM Aux → Camera Talkback → IFB &nbsp;|&nbsp;
-          B1 bus → Virtual Cable → OBS → ATEM Broadcast
+      {/* Signal flow footer */}
+      <footer className="mt-8 pt-4 border-t border-[#2a2d3a]">
+        <p className="text-[10px] text-slate-600 text-center leading-5">
+          DJI Mics → Voicemeeter A2 → Physical Out → ATEM (dedicated mic input, controlled from ATEM mixer)
+          <br />
+          Computer Audio → Voicemeeter B1 → Virtual Cable → OBS → ATEM (program audio, no mics)
+          <br />
+          IFB Feed → Voicemeeter B2 → Physical Out → Wireless TX → Presenter earpieces (mics excluded in Safe Mode)
         </p>
       </footer>
     </div>

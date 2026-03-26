@@ -3,21 +3,26 @@
 import { cn } from '@/lib/utils'
 import { Card, CardHeader, CardTitle } from './ui/card'
 
-const BUS_LABELS = {
-  b1: 'B1\nBroadcast',
-  b2: 'B2\nIFB',
-  a1: 'A1\nMonitor',
-}
+// Columns shown in the routing matrix
+const BUS_COLUMNS = [
+  { param: 'a1', label: 'A1\nMonitor' },
+  { param: 'a2', label: 'A2\nATEM Mic' },
+  { param: 'b1', label: 'B1\nBroadcast' },
+  { param: 'b2', label: 'B2\nIFB' },
+]
 
-function RoutingCell({ active, onClick, disabled }) {
+// Columns that should warn when mic strip (id=0) is active
+const WARN_MIC_ON = ['b1', 'b2']
+
+function RoutingCell({ active, warn, onClick }) {
   return (
     <button
       onClick={onClick}
-      disabled={disabled}
       className={cn(
         'w-8 h-8 rounded text-xs font-bold transition-colors focus:outline-none',
-        'disabled:cursor-not-allowed',
-        active
+        active && warn
+          ? 'bg-amber-700 text-amber-200 hover:bg-amber-600 shadow-[0_0_8px_rgba(214,158,46,0.4)]'
+          : active
           ? 'bg-green-700 text-green-200 hover:bg-green-600 shadow-[0_0_8px_rgba(56,161,105,0.4)]'
           : 'bg-[#0f1117] text-slate-600 border border-[#2a2d3a] hover:border-slate-500'
       )}
@@ -27,16 +32,14 @@ function RoutingCell({ active, onClick, disabled }) {
   )
 }
 
-export function AudioRoutingGrid({ strips, onRoutingChange }) {
+export function AudioRoutingGrid({ strips }) {
   async function toggleRouting(stripId, param, currentValue) {
-    const newValue = !currentValue
-    // Optimistic update handled by socket broadcast from server
     await fetch('/api/voicemeeter/routing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stripId, param, value: newValue }),
+      body: JSON.stringify({ stripId, param, value: !currentValue }),
     })
-    if (onRoutingChange) onRoutingChange()
+    // State update comes back via socket broadcast from server
   }
 
   if (!strips?.length) {
@@ -51,18 +54,18 @@ export function AudioRoutingGrid({ strips, onRoutingChange }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Audio Routing Matrix</CardTitle>
-        <p className="text-xs text-slate-500">Strip → Bus assignments</p>
+        <CardTitle>Voicemeeter Routing</CardTitle>
+        <p className="text-xs text-slate-500">Strip → Bus</p>
       </CardHeader>
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
             <tr>
-              <th className="text-left text-slate-500 font-normal pb-2 pr-4 whitespace-nowrap">Input Strip</th>
-              {Object.values(BUS_LABELS).map((label) => (
-                <th key={label} className="text-center text-slate-500 font-normal pb-2 px-2 whitespace-pre-line leading-tight">
-                  {label}
+              <th className="text-left text-slate-500 font-normal pb-2 pr-4">Input Strip</th>
+              {BUS_COLUMNS.map((col) => (
+                <th key={col.param} className="text-center text-slate-500 font-normal pb-2 px-2 whitespace-pre-line leading-tight">
+                  {col.label}
                 </th>
               ))}
             </tr>
@@ -70,22 +73,24 @@ export function AudioRoutingGrid({ strips, onRoutingChange }) {
           <tbody className="divide-y divide-[#2a2d3a]">
             {strips.map((strip) => (
               <tr key={strip.id}>
-                <td className="py-2 pr-4 whitespace-nowrap">
-                  <div>
+                <td className="py-2 pr-4">
+                  <div className="flex items-center gap-2">
                     <span className="text-slate-200 font-medium">{strip.label}</span>
                     {strip.id === 0 && (
-                      <span className="ml-2 text-[10px] text-amber-500 border border-amber-800 rounded px-1">MIC</span>
+                      <span className="text-[10px] text-amber-400 border border-amber-800 rounded px-1">MIC</span>
+                    )}
+                    {strip.id === 3 && (
+                      <span className="text-[10px] text-blue-400 border border-blue-800 rounded px-1">SYS</span>
                     )}
                   </div>
                 </td>
-                {Object.keys(BUS_LABELS).map((busParam) => (
-                  <td key={busParam} className="py-2 px-2 text-center">
+                {BUS_COLUMNS.map((col) => (
+                  <td key={col.param} className="py-2 px-2 text-center">
                     <div className="flex justify-center">
                       <RoutingCell
-                        active={strip[busParam]}
-                        onClick={() => toggleRouting(strip.id, busParam, strip[busParam])}
-                        // Warn visually if mic is being routed to IFB
-                        disabled={false}
+                        active={strip[col.param]}
+                        warn={strip.id === 0 && WARN_MIC_ON.includes(col.param) && strip[col.param]}
+                        onClick={() => toggleRouting(strip.id, col.param, strip[col.param])}
                       />
                     </div>
                   </td>
@@ -96,9 +101,10 @@ export function AudioRoutingGrid({ strips, onRoutingChange }) {
         </table>
       </div>
 
-      <p className="mt-3 text-[10px] text-slate-600">
-        ● = active routing &nbsp;|&nbsp; B2 IFB column should be OFF for mic strips during live show
-      </p>
+      <div className="mt-3 space-y-1 pt-2 border-t border-[#2a2d3a]">
+        <p className="text-[10px] text-slate-600">● = active &nbsp;|&nbsp; <span className="text-amber-600">●</span> = active but may cause IFB feedback</p>
+        <p className="text-[10px] text-slate-600">MIC strip: A2 → ATEM dedicated input &nbsp;|&nbsp; B1/B2 should stay OFF during live show</p>
+      </div>
     </Card>
   )
 }
