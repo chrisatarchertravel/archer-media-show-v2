@@ -85,14 +85,14 @@ export function BusVolumePanel({ strips, buses }) {
 
         <div className="border-t border-[#2a2d3a] pt-3 mt-3">
           <p className="label-xs mb-2">Output Buses</p>
-          {buses?.filter(b => b.id === 3 || b.id === 4).map((bus) => (
+          {buses?.filter(b => b.id === 1 || b.id === 3).map((bus) => (
             <GainSlider
               key={bus.id}
               label={bus.label}
               type="bus"
               id={bus.id}
               gain={bus.gain}
-              highlight={bus.id === 4}
+              highlight={bus.id === 1}
             />
           ))}
         </div>

@@ -175,56 +175,135 @@ To find the ATEM's IP: open **ATEM Software Control → Preferences → Network*
 
 ### 2. Additional hardware required
 
-You will need:
-- **A second physical audio output** on your show computer's sound card (or a USB audio interface with two outputs) — one for the ATEM mic feed (A2), one for the IFB feed (B2)
-- **An HDMI-to-SDI converter** (or a spare SDI-capable input path) to bring the A2 mic feed into the ATEM as a dedicated input — the same type of converter already used for the OBS computer source works
-- **A wireless IFB transmitter** (e.g. Comtek, Listen Technologies, or a spare DJI receiver in monitoring mode) fed from the B2 physical output — this replaces the camera talkback path for presenter monitoring since talkback is reserved for the control room
+- **One physical audio output** on the show computer — either the built-in headphone/line-out jack or a USB audio interface output. This carries the IFB feed (system audio only) from Voicemeeter A2 to the ATEM.
+- **A 3.5mm TRS to dual XLR cable** (or a DI box) to connect the computer audio output to the ATEM's XLR inputs on the rear panel.
+
+> The ATEM Television Studio HD8 ISO has two XLR audio inputs on the rear panel labelled **Audio In 1** and **Audio In 2**. These accept mic or line-level signal and appear as dedicated audio channels in the ATEM audio mixer. This is the physical path for the IFB feed.
 
 ---
 
-### 3. Voicemeeter Banana setup
+### 3. Windows audio setup (do this first)
 
-Open Voicemeeter Banana before starting the app. Configure it as follows:
+This step is what separates system audio from the DJI mic inside Voicemeeter. Without it, everything arrives at Voicemeeter on the same strip.
 
-#### Hardware Inputs (left side strips)
+1. Right-click the speaker icon in the Windows taskbar → **Sound settings** (or open Settings → System → Sound)
+2. Under **Output**, set the default output device to **VoiceMeeter Input**
+3. That's it. All Windows application audio — Zoom, browser, media players, everything — now flows into Voicemeeter as Virtual Input 1, completely separate from the DJI mic which arrives as Hardware Input 1
 
-| Strip | Source | A1 | A2 | B1 | B2 |
-|---|---|---|---|---|---|
-| Hardware Input 1 | DJI Mics (select your DJI USB-C device) | OFF | **ON** | OFF | OFF |
-| Virtual Input 1 | System audio (set as default Windows playback device) | ON | OFF | **ON** | **ON** |
-
-Key points:
-- **DJI Mics → A2 only.** The mic signal goes directly to the ATEM via a physical cable. It does not go into OBS (B1 OFF) and never reaches the IFB feed (B2 OFF).
-- **System audio → B1 and B2.** Computer playback goes to OBS for broadcast (B1) and also to the IFB feed (B2) so presenters hear music, SFX, and playback in their earpieces.
-
-#### Hardware Outputs (right side buses)
-
-| Bus | Route to |
-|---|---|
-| A1 | Local monitor speakers or headphones |
-| **A2** | Physical audio output 1 on your sound card → HDMI-SDI adapter → spare ATEM SDI input (this becomes the dedicated DJI mic input on the ATEM) |
-| B1 (Virtual Output 1) | Set as the audio capture device in OBS — computer audio only, no mics |
-| **B2 (Virtual Output 2)** | Physical audio output 2 on your sound card → Wireless IFB transmitter → Presenter earpieces |
-
-#### In OBS
-- Set audio capture device to **VB-Audio Virtual Cable** (Bus B1)
-- This captures computer audio only — mics are no longer part of this signal path
-- OBS sends clean program audio (no presenter voices) to the ATEM
-
-#### On the ATEM
-
-The dedicated mic input (the SDI input connected to A2) now appears in the ATEM as a standard input with its own independent audio channel.
-
-1. Open **ATEM Software Control → Audio** tab
-2. Find the input corresponding to your A2 connection (e.g. Input 7)
-3. Set its mix option to **ON** (always in mix) or **AFV** as needed
-4. The input level can be controlled from the ATEM Audio panel or from the **ATEM Audio Mixer** panel in this app
-
-> The ATEM talkback system remains untouched and available for the control room team as before.
+> If you have Zoom or any conferencing app open, you may also need to go into that app's audio settings and set its speaker/output to **VoiceMeeter Input** explicitly, as some apps cache the device setting.
 
 ---
 
-### 3. Running the app
+### 4. Voicemeeter Banana setup
+
+Open Voicemeeter Banana. If it is not already open the app will start in simulation mode — open it before launching the show control app.
+
+#### Step 1 — Set Hardware Input 1 to your DJI mic
+
+1. Click the first hardware input dropdown (top-left of the Voicemeeter window)
+2. Select your DJI USB-C receiver from the list — it will appear as something like **DJI Wireless Mic Receiver** or similar
+3. On that strip, enable **only B1** — press the B1 button so it lights up, make sure A1, A2, A3, B2 are all off
+
+This routes the mic exclusively into the B1 virtual cable, which is what OBS captures. The mic never touches A2 (IFB output) in this state — that is the live default.
+
+#### Step 2 — Confirm Virtual Input 1 routing
+
+The Voicemeeter VAIO strip (Virtual Input 1) is where all Windows system audio arrives after Step 3 above.
+
+On that strip, enable **A1, A2, and B1**:
+- A1 = local monitor playback so you can hear the mix in the control room
+- A2 = IFB physical output → ATEM XLR → camera SDI return → presenter earpiece
+- B1 = into the virtual cable → OBS → ATEM program
+
+#### Step 3 — Set hardware outputs
+
+On the right side of Voicemeeter:
+
+| Output | Select this device | Purpose |
+|---|---|---|
+| **A1** | Your monitor speakers or headphones | Control room monitoring |
+| **A2** | The physical audio output going to the ATEM XLR input (e.g. your headphone jack, or a USB audio interface output) | IFB feed to ATEM |
+| **B1** | VB-Audio Virtual Cable | Source for OBS audio |
+
+#### Step 4 — Confirm VB-Audio Virtual Cable is installed
+
+B1 requires VB-Audio Virtual Cable to be installed. Download it from [vb-audio.com/Cable](https://vb-audio.com/Cable). After installing, reboot, then it will appear as a device option in the B1 dropdown.
+
+---
+
+### 5. OBS setup
+
+OBS does not generate audio in this setup — it only packages the Voicemeeter mix and sends it to the ATEM via HDMI.
+
+1. Open OBS → **Settings → Audio**
+2. Set **Desktop Audio** to **Disabled**
+3. Set **Mic/Auxiliary Audio** to **Disabled**
+4. Click OK
+5. In the **Sources** panel, click **+** → **Audio Input Capture**
+6. Name it "Voicemeeter Mix" → OK
+7. In the device dropdown, select **VB-Audio Virtual Cable**
+8. Click OK
+
+> OBS now receives the complete Voicemeeter B1 mix (DJI mic + system audio) through the virtual cable and sends it via HDMI to the ATEM. This is your ATEM program audio source. Do not add any other audio sources in OBS — they will double-capture.
+
+---
+
+### 6. Physical wiring
+
+```
+Computer headphone/line-out (Voicemeeter A2)
+    │
+    ▼ 3.5mm TRS → dual XLR cable (or DI box)
+    │
+    ▼
+ATEM Television Studio HD8 ISO — rear panel Audio In 1 (XLR)
+    │
+    ▼ (configured in ATEM Software Control — see next step)
+    │
+    ▼
+Camera SDI return → Studio 4K Plus headset output → Presenter IFB
+```
+
+---
+
+### 7. ATEM Software Control setup
+
+This routes the XLR input (IFB feed) to the camera SDI return so it reaches the presenter headsets.
+
+#### Step 1 — Confirm the XLR input is active in the audio mixer
+
+1. Open **ATEM Software Control**
+2. Click the **Audio** tab (top navigation bar)
+3. Find the channel labelled **XLR** or **Audio In 1** — this is the IFB feed coming from Voicemeeter A2
+4. Set its mix option to **ON** (the button should be lit/active)
+5. Set the fader to 0 dB (unity)
+
+#### Step 2 — Route the XLR input to the camera SDI return
+
+This tells the camera what audio to send to the presenter headset.
+
+1. In ATEM Software Control, click the **gear/settings icon** (top right) or go to **Outputs**
+2. Look for a section called **SDI Out**, **Return Source**, or **Camera Control** (exact label depends on firmware version)
+3. For each Studio 4K Plus camera, find its **Return Source** or **SDI Out Source** dropdown
+4. Set it to **XLR** or **Audio In 1** (whichever label your version uses for the rear XLR input)
+5. The presenter headset plugged into that camera will now receive the IFB mix — system audio only, no mic feedback
+
+> If you do not see a Return Source option in your current firmware, open **ATEM Setup** (the separate utility, not ATEM Software Control), go to **Software Update**, and install the latest available firmware. Return source routing was added in firmware 8.6.
+
+---
+
+### 8. Running the app
+
+```bash
+# Development
+npm run dev
+
+# Production
+npm run build
+npm start
+```
+
+Open `http://localhost:3000` in a browser on the show computer.
 
 ```bash
 # Development
@@ -245,9 +324,9 @@ The app includes three one-click presets accessible from the Presets panel:
 
 | Preset | What it does | When to use |
 |---|---|---|
-| **Live Mode** | Mics routed to ATEM via A2, excluded from IFB (B2 OFF) | Default for all live recording |
-| **Rehearsal** | Mics routed to ATEM via A2, also sent to IFB (B2 ON) so presenters can hear themselves | Soundcheck and mic level setting before recording |
-| **Break** | IFB bus (B2) muted entirely | Ad breaks, between segments |
+| **Live Mode** | Mics go to program only (B1 → OBS → ATEM). IFB receives system audio only (A2). Presenter never hears their own voice. | Default for all live recording |
+| **Rehearsal** | Mics added to A2 bus so presenters hear themselves in the IFB alongside system audio. Program output unchanged. | Soundcheck and mic level setting before recording |
+| **Break** | A2 bus (IFB physical output) muted. Presenters hear nothing. Program output unchanged. | Ad breaks, between segments |
 
 ---
 

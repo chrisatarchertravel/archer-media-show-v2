@@ -80,15 +80,20 @@ export function IFBSafeToggle({ ifbSafeMode, onChange }) {
           <p className="label-xs mb-1">Program output — always:</p>
           <div className="flex items-center gap-2">
             <Mic size={12} className="text-green-500 shrink-0" />
-            <span className="text-slate-300">DJI Mics</span>
+            <span className="text-slate-300">DJI Mics → B1 → OBS → ATEM</span>
             <span className="text-[10px] text-slate-600 ml-auto">unaffected</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-px bg-green-500 shrink-0 inline-block" />
-            <span className="text-slate-300">Computer audio</span>
+            <span className="text-slate-300">System audio → B1 → OBS → ATEM</span>
             <span className="text-[10px] text-slate-600 ml-auto">unaffected</span>
           </div>
         </div>
+
+        {/* IFB path note */}
+        <p className="text-[10px] text-slate-600 text-center">
+          IFB path: Voicemeeter A2 → physical out → ATEM XLR → camera SDI return
+        </p>
 
       </div>
     </div>
