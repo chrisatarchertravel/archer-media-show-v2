@@ -105,7 +105,8 @@ components/
 ## Prerequisites
 
 - **Windows 10 or 11** — Voicemeeter and its DLL are Windows-only
-- **Node.js 18+**
+- **Windows 10 or 11**
+- **Node.js 18+** — install with native build tools (see Installation below)
 - **Voicemeeter Banana** — [vb-audio.com/Voicemeeter/banana.htm](https://vb-audio.com/Voicemeeter/banana.htm) (free)
 - **VB-Audio Virtual Cable** — [vb-audio.com/Cable](https://vb-audio.com/Cable) (free) — provides the virtual audio cables used as B1 and B2 outputs
 - The show computer must be on the **same local network** as the ATEM switcher
@@ -113,6 +114,30 @@ components/
 ---
 
 ## Installation
+
+### 1. Install Node.js with native build tools
+
+`voicemeeter-connector` wraps a native Windows DLL and must be compiled for your Node.js version on install. This requires Python and Visual Studio C++ Build Tools.
+
+**Recommended:** Download the Node.js LTS installer from [nodejs.org](https://nodejs.org). During installation, check the box labelled **"Automatically install the necessary tools"**. A PowerShell window will open after Node installs and set up Python and VS Build Tools via Chocolatey — let it complete fully before continuing.
+
+> Do **not** use `npm install -g windows-build-tools` — that package is deprecated and broken on Node 18+.
+
+If you already have Node.js installed and need to add build tools manually, run the following in **PowerShell as Administrator**:
+
+```powershell
+choco install python visualstudio2022-workload-vctools -y
+```
+
+If Chocolatey is not installed:
+
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+```
+
+### 2. Install project dependencies
 
 ```bash
 git clone <repo>
