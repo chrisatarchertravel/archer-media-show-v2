@@ -190,8 +190,22 @@ The critical setting: **Hardware Input 1 (DJI Mics) must have B2 turned OFF**. T
 - This sends the full broadcast mix (including mics) to the ATEM as a program source
 
 #### On the ATEM
-- Route the physical audio input connected to B2 into the **camera talkback / IFB send** for the Studio 4K Plus cameras
-- This is done in ATEM Software Control under **Audio → Fairlight** or in the camera control settings
+
+The Studio 4K Plus cameras receive IFB audio via the camera control cable (12G-SDI with return talkback). The ATEM feeds talkback audio to connected cameras from its **program audio output by default** — this is what causes the presenter feedback loop this app is designed to fix.
+
+To configure talkback audio in ATEM Software Control:
+
+1. Open **ATEM Software Control**
+2. Go to the **Camera** tab (top navigation)
+3. For each camera, there is a **Talkback** column — this controls what audio is sent back to that camera's IFB output
+4. Set the talkback source to the **audio input** you wired B2 into (e.g. Input 7 or whichever physical input on the ATEM you connected the B2 audio feed to)
+
+If you do not see per-camera talkback source selection, your firmware may need updating:
+- Open **ATEM Setup** (separate utility from ATEM Software Control)
+- Check **Software Update** — install the latest ATEM firmware
+- Talkback source routing was added in firmware 8.6+
+
+> **Alternative if talkback source routing is unavailable:** The ATEM HD8 ISO has a dedicated **Talkback** XLR input on the rear panel. Wire the B2 physical audio output from your sound card directly into this input. The ATEM will then use that signal as the talkback/IFB feed to all connected cameras automatically, bypassing the need to configure per-camera routing in software.
 
 ---
 
